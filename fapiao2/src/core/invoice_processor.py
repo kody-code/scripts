@@ -420,7 +420,6 @@ class InvoiceProcessor:
     
     def process(self, progress_callback, stop_check, error_callback):
         """处理发票申请的主流程"""
-        error_records = []
         try:
             # 加载数据
             self.load_data()
@@ -456,7 +455,10 @@ class InvoiceProcessor:
                 
                 if not contract_no:
                     self.logger.warning("跳过缺少合同编号的记录")
-                    error_records.append({**record, "错误原因": "缺少合同编号"})
+                    ExcelHandler.save_error_records(
+                        {**record, "错误原因": "缺少合同编号"}, 
+                        self.error_file
+                        )
                     continue
                 
                 self.logger.info(f"\n===== 开始处理第{i+1}条记录: 合同编号 {contract_no} =====")
@@ -464,35 +466,33 @@ class InvoiceProcessor:
                 # 搜索合同
                 if not self.search_contract(contract_no):
                     self.logger.warning(f"合同 {contract_no} 未找到，添加到错误记录")
-                    error_records.append({**record, "错误原因": "合同未找到"})
+                    ExcelHandler.save_error_records({**record, "错误原因": "合同未找到"}, self.error_file)
                     continue
                 
                 # 申请发票
                 if not self.start_invoice_application():
                     self.logger.warning(f"合同 {contract_no} 申请发票失败")
-                    error_records.append({**record, "错误原因": "申请发票失败"})
+                    ExcelHandler.save_error_records({**record, "错误原因": "申请发票失败"}, self.error_file)
                     continue
                 
                 # 填写发票表单
                 if not self.fill_invoice_form(invoice_content, amount):
                     self.logger.warning(f"合同 {contract_no} 填写发票表单失败")
-                    error_records.append({**record, "错误原因": "填写发票表单失败"})
+                    ExcelHandler.save_error_records({**record, "错误原因": "填写发票表单失败"}, self.error_file)
                     continue
                 
                 # 提交申请
                 if not self.submit_invoice():
                     self.logger.warning(f"合同 {contract_no} 提交申请失败")
-                    error_records.append({**record, "错误原因": "提交申请失败"})
+                    ExcelHandler.save_error_records({**record, "错误原因": "提交申请失败"}, self.error_file)
                     continue
                 
                 self.logger.success(f"合同 {contract_no} 处理成功")
                 time.sleep(2)  # 处理间隔
             
             # 保存错误记录
-            if error_records:
-                ExcelHandler.save_error_records(error_records, self.error_file)
-                self.logger.warning(f"共{len(error_records)}条记录处理失败，已保存至: {self.error_file}")
-                # 这里可以通过回调显示提示信息
+            if os.path.exists(self.error_file) and os.path.getsize(self.error_file) > 0:
+                self.logger.warning(f"有错误记录已保存至: {self.error_file}")
                 
         finally:
             self.browser.quit()
