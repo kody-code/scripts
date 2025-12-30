@@ -9,7 +9,7 @@ from utils.excel_handler import ExcelHandler
 from utils.logger import capture_screenshot
 
 class InvoiceProcessor:
-    def __init__(self, excel_path, username, password, email, error_file, logger, screenshot_dir):
+    def __init__(self, excel_path, username, password, email, error_file, logger, screenshot_dir, driver_path=None):
         self.excel_path = excel_path
         self.username = username
         self.password = password
@@ -17,7 +17,8 @@ class InvoiceProcessor:
         self.error_file = error_file
         self.logger = logger
         self.screenshot_dir = screenshot_dir
-        self.browser = BrowserDriver(logger)
+        self.driver_path = driver_path
+        self.browser = BrowserDriver(logger, driver_path)
         self.all_data = []
         self.total = 0
         

@@ -15,6 +15,7 @@ class InvoiceApp:
         
         # 初始化变量
         self.excel_path = tk.StringVar()
+        self.driver_path = tk.StringVar()
         self.error_file = os.path.join(os.path.expanduser("~"), "Desktop", "error_records.xlsx")
         self.screenshot_dir = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "Desktop", "screenshots"))
         self.processor = None
@@ -49,22 +50,27 @@ class InvoiceApp:
         ttk.Entry(frame, textvariable=self.excel_path, width=50).grid(row=0, column=1, padx=5, pady=5)
         ttk.Button(frame, text="浏览", command=self.browse_excel).grid(row=0, column=2, padx=5, pady=5)
         
+        # 驱动文件选择
+        ttk.Label(frame, text="Chrome驱动路径:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.driver_path, width=50).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(frame, text="浏览", command=self.browse_driver).grid(row=1, column=2, padx=5, pady=5)
+        
         # 用户信息（省略部分重复代码）
-        ttk.Label(frame, text="用户名:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(frame, text="用户名:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
         self.username_var = tk.StringVar(value=os.getenv("USER_NAME") or "")
-        ttk.Entry(frame, textvariable=self.username_var).grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.username_var).grid(row=2, column=1, padx=5, pady=5, sticky="w")
         
-        ttk.Label(frame, text="密码:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(frame, text="密码:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.password_var = tk.StringVar(value=os.getenv("PASSWORD") or "")
-        ttk.Entry(frame, textvariable=self.password_var, show="*").grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.password_var, show="*").grid(row=3, column=1, padx=5, pady=5, sticky="w")
         
-        ttk.Label(frame, text="接收邮箱:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(frame, text="接收邮箱:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
         self.email_var = tk.StringVar(value="fapiao@cuour.org")
-        ttk.Entry(frame, textvariable=self.email_var).grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.email_var).grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
-        ttk.Label(frame, text="截图路径:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
-        ttk.Entry(frame, textvariable=self.screenshot_dir, width=50).grid(row=4, column=1, padx=5, pady=5)
-        ttk.Button(frame, text="浏览", command=self.browse_screenshot_dir).grid(row=4, column=2, padx=5, pady=5)
+        ttk.Label(frame, text="截图路径:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.screenshot_dir, width=50).grid(row=5, column=1, padx=5, pady=5)
+        ttk.Button(frame, text="浏览", command=self.browse_screenshot_dir).grid(row=5, column=2, padx=5, pady=5)
         
         # 按钮区域（省略部分重复代码）
         btn_frame = ttk.Frame(main_tab)
@@ -117,6 +123,14 @@ class InvoiceApp:
         if dirname:
             self.screenshot_dir.set(dirname)
     
+    def browse_driver(self):
+        filename = filedialog.askopenfilename(
+            filetypes=[("Executable files", "*.exe"), ("All files", "*")],
+            title="选择Chrome驱动文件(chromedriver)"
+        )
+        if filename:
+            self.driver_path.set(filename)
+    
     def start_processing(self):
         if not self.excel_path.get():
             messagebox.showerror("错误", "请选择Excel文件")
@@ -143,7 +157,8 @@ class InvoiceApp:
                 email=self.email_var.get(),
                 error_file=self.error_file,
                 logger=self.logger,
-                screenshot_dir=self.screenshot_dir.get()
+                screenshot_dir=self.screenshot_dir.get(),
+                driver_path=self.driver_path.get() or None  # 如果驱动路径为空，则传递None
             )
         
             # 检查处理器是否初始化成功
