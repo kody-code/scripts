@@ -6,26 +6,6 @@ import threading
 from core.invoice_processor import InvoiceProcessor
 from utils.logger import setup_logger
 
-# 自定义日志sink，用于将日志输出到Tkinter文本框
-class TextSink:
-    def __init__(self, text_widget):
-        self.text_widget = text_widget
-        # 日志格式器
-        self.formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        
-    def write(self, record):
-        # 格式化日志记录
-        msg = self.formatter.format(record) + "\n"
-        # 更新文本框（确保在主线程执行）
-        self.text_widget.configure(state="normal")
-        self.text_widget.insert("end", msg)
-        self.text_widget.see("end")
-        self.text_widget.configure(state="disabled")
-        
-    def flush(self):
-        # 不需要实际实现刷新操作
-        pass
-
 class InvoiceApp:
     def __init__(self, root):
         self.root = root
@@ -36,6 +16,7 @@ class InvoiceApp:
         # 初始化变量
         self.excel_path = tk.StringVar()
         self.error_file = os.path.join(os.path.expanduser("~"), "Desktop", "error_records.xlsx")
+        self.screenshot_dir = tk.StringVar(value=os.path.join(os.path.expanduser("~"), "Desktop", "screenshots"))
         self.processor = None
         self.is_running = False
         
@@ -80,6 +61,10 @@ class InvoiceApp:
         ttk.Label(frame, text="接收邮箱:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
         self.email_var = tk.StringVar(value="fapiao@cuour.org")
         ttk.Entry(frame, textvariable=self.email_var).grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+        ttk.Label(frame, text="截图路径:").grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        ttk.Entry(frame, textvariable=self.screenshot_dir, width=50).grid(row=4, column=1, padx=5, pady=5)
+        ttk.Button(frame, text="浏览", command=self.browse_screenshot_dir).grid(row=4, column=2, padx=5, pady=5)
         
         # 按钮区域（省略部分重复代码）
         btn_frame = ttk.Frame(main_tab)
@@ -123,6 +108,14 @@ class InvoiceApp:
         )
         if filename:
             self.excel_path.set(filename)
+
+    def browse_screenshot_dir(self):
+        dirname = filedialog.askdirectory(
+            title="选择截图保存目录",
+            initialdir=self.screenshot_dir.get()
+        )
+        if dirname:
+            self.screenshot_dir.set(dirname)
     
     def start_processing(self):
         if not self.excel_path.get():
@@ -149,7 +142,8 @@ class InvoiceApp:
                 password=self.password_var.get(),
                 email=self.email_var.get(),
                 error_file=self.error_file,
-                logger=self.logger
+                logger=self.logger,
+                screenshot_dir=self.screenshot_dir.get()
             )
         
             # 检查处理器是否初始化成功
