@@ -6,18 +6,21 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from core.browser_driver import BrowserDriver
 from utils.excel_handler import ExcelHandler
+from utils.logger import capture_screenshot
 
 class InvoiceProcessor:
-    def __init__(self, excel_path, username, password, email, error_file, logger):
+    def __init__(self, excel_path, username, password, email, error_file, logger, screenshot_dir):
         self.excel_path = excel_path
         self.username = username
         self.password = password
         self.email = email
         self.error_file = error_file
         self.logger = logger
+        self.screenshot_dir = screenshot_dir
         self.browser = BrowserDriver(logger)
         self.all_data = []
         self.total = 0
+        
         
     def load_data(self):
         """加载Excel数据"""
@@ -423,6 +426,10 @@ class InvoiceProcessor:
         try:
             # 加载数据
             self.load_data()
+
+            if not self.load_data():
+                error_callback("加载数据失败")
+                return
             
             # 初始化浏览器
             if not self.browser.init_driver():
@@ -432,11 +439,15 @@ class InvoiceProcessor:
             # 登录系统
             if not self.login():
                 error_callback("登录失败")
+                if self.browser.driver: 
+                    capture_screenshot(self.browser.driver, "login_failed", self.screenshot_dir)
                 return
                 
             # 导航到合同页面
             if not self.navigate_to_contract_page():
                 error_callback("导航到合同页面失败")
+                if self.browser.driver: 
+                    capture_screenshot(self.browser.driver, "navigate_failed", self.screenshot_dir)
                 return
             
             # 处理每个合同
@@ -466,25 +477,45 @@ class InvoiceProcessor:
                 # 搜索合同
                 if not self.search_contract(contract_no):
                     self.logger.warning(f"合同 {contract_no} 未找到，添加到错误记录")
-                    ExcelHandler.save_error_records({**record, "错误原因": "合同未找到"}, self.error_file)
+                    if self.browser.driver:
+                        screenshot_path = capture_screenshot(self.browser.driver, contract_no, self.screenshot_dir)
+                    ExcelHandler.save_error_records(
+                    {**record, "错误原因": "合同未找到", "截图路径": screenshot_path}, 
+                    self.error_file
+                )
                     continue
                 
                 # 申请发票
                 if not self.start_invoice_application():
                     self.logger.warning(f"合同 {contract_no} 申请发票失败")
-                    ExcelHandler.save_error_records({**record, "错误原因": "申请发票失败"}, self.error_file)
+                    if self.browser.driver:
+                        screenshot_path = capture_screenshot(self.browser.driver, contract_no, self.screenshot_dir)
+                    ExcelHandler.save_error_records(
+                    {**record, "错误原因": "申请发票失败", "截图路径": screenshot_path}, 
+                    self.error_file
+                )
                     continue
                 
                 # 填写发票表单
                 if not self.fill_invoice_form(invoice_content, amount):
                     self.logger.warning(f"合同 {contract_no} 填写发票表单失败")
-                    ExcelHandler.save_error_records({**record, "错误原因": "填写发票表单失败"}, self.error_file)
+                    if self.browser.driver:
+                        screenshot_path = capture_screenshot(self.browser.driver, contract_no, self.screenshot_dir)
+                    ExcelHandler.save_error_records(
+                    {**record, "错误原因": "填写发票表单失败", "截图路径": screenshot_path}, 
+                    self.error_file
+                )
                     continue
                 
                 # 提交申请
                 if not self.submit_invoice():
                     self.logger.warning(f"合同 {contract_no} 提交申请失败")
-                    ExcelHandler.save_error_records({**record, "错误原因": "提交申请失败"}, self.error_file)
+                    if self.browser.driver:
+                        screenshot_path = capture_screenshot(self.browser.driver, contract_no, self.screenshot_dir)
+                    ExcelHandler.save_error_records(
+                    {**record, "错误原因": "提交申请失败", "截图路径": screenshot_path}, 
+                    self.error_file
+                )
                     continue
                 
                 self.logger.success(f"合同 {contract_no} 处理成功")
