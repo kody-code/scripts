@@ -1,10 +1,9 @@
 import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import logging
 import threading
-from core.invoice_processor import InvoiceProcessor
-from utils.logger import setup_logger
+from src.core.invoice_processor import InvoiceProcessor
+from src.utils.logger import setup_logger
 
 class InvoiceApp:
     def __init__(self, root):

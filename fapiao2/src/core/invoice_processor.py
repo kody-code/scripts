@@ -4,9 +4,9 @@ from selenium.webdriver.common.by import By
 from selenium.common import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from core.browser_driver import BrowserDriver
-from utils.excel_handler import ExcelHandler
-from utils.logger import capture_screenshot
+from src.core.browser_driver import BrowserDriver
+from src.utils.excel_handler import ExcelHandler
+from src.utils.logger import capture_screenshot
 
 class InvoiceProcessor:
     def __init__(self, excel_path, username, password, email, error_file, logger, screenshot_dir, driver_path=None):

@@ -1,9 +1,9 @@
 import tkinter as tk
 
 
-from gui.main_window import InvoiceApp
-from utils.dotenv_loader import load_env
-from utils.logger import setup_logger
+from src.gui.main_window import InvoiceApp
+from src.utils.dotenv_loader import load_env
+from src.utils.logger import setup_logger
 
 logger = setup_logger()
 
