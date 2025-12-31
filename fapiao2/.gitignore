@@ -2,3 +2,4 @@ lib/
 logs/
 .env
 .idea/
+.vscode/
